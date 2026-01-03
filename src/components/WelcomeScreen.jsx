@@ -32,7 +32,7 @@ export default function WelcomeScreen({ t, darkMode, onPromptSelect }) {
               onClick={() => onPromptSelect(item.prompt)} 
               className={`
                   group relative p-5 rounded-2xl text-left transition-all duration-300 
-                  hover:-translate-y-1 border animate-fadeIn overflow-hidden
+                  hover:-translate-y-1 border animate-fadeIn overflow-hidden cursor-pointer
                   ${darkMode 
                       ? 'bg-white/5 hover:bg-white/10 border-white/5 shadow-black/20 backdrop-blur-xl' 
                       : 'bg-white hover:bg-gray-50 border-zinc-200 shadow-sm hover:shadow-md'

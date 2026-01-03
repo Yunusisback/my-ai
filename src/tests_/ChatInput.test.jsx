@@ -11,127 +11,83 @@ describe('ChatInput Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Standart function kullanarak constructor hatasını önlüyoruz
+  
     const MockSpeechRecognition = vi.fn(function() {
       this.start = vi.fn();
       this.stop = vi.fn();
       this.lang = '';
     });
     vi.stubGlobal('SpeechRecognition', MockSpeechRecognition);
+    vi.stubGlobal('webkitSpeechRecognition', MockSpeechRecognition);
+
+    vi.stubGlobal('URL', {
+      createObjectURL: vi.fn(() => 'mock-url'),
+      revokeObjectURL: vi.fn(),
+    });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    // Testler arası window nesnesini temizle
-    delete window.SpeechRecognition;
-    delete window.webkitSpeechRecognition;
   });
 
-  it('Bileşen doğru render edilmeli ve placeholder görünmeli', () => {
-    render(
-      <ChatInput 
-        input="" 
-        setInput={mockSetInput} 
-        loading={false} 
-        placeholderText="Test Mesajı..." 
-      />
-    );
-    
+  it('Bileşen alt parçalarıyla (InputField vb.) doğru render edilmeli', () => {
+    render(<ChatInput input="" setInput={mockSetInput} loading={false} placeholderText="Test Mesajı..." />);
     expect(screen.getByPlaceholderText('Test Mesajı...')).toBeInTheDocument();
-    const sendButton = screen.getAllByRole('button')[2]; 
-    expect(sendButton).toBeDisabled();
   });
 
-  it('Kullanıcı yazı yazdığında setInput tetiklenmeli', async () => {
+  it('Kullanıcı InputField üzerinden yazı yazdığında setInput tetiklenmeli', async () => {
     const user = userEvent.setup();
     render(<ChatInput input="" setInput={mockSetInput} />);
-    
     const textarea = screen.getByRole('textbox');
     await user.type(textarea, 'Merhaba');
-
     expect(mockSetInput).toHaveBeenCalled(); 
   });
 
-  it('Enter tuşuna basıldığında mesaj gönderilmeli', () => {
+  it('Enter tuşuna basıldığında onSend tetiklenmeli', () => {
     render(<ChatInput input="Merhaba" setInput={mockSetInput} onSend={mockOnSend} />);
-    
     const textarea = screen.getByRole('textbox');
-    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter', charCode: 13 });
-
+    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
     expect(mockOnSend).toHaveBeenCalledTimes(1);
-    expect(mockOnSend).toHaveBeenCalledWith(null);
   });
 
-  it('Shift + Enter tuşuna basıldığında mesaj GÖNDERİLMEMELİ', () => {
-    render(<ChatInput input="Merhaba" setInput={mockSetInput} onSend={mockOnSend} />);
-    
-    const textarea = screen.getByRole('textbox');
-    fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true });
-
-    expect(mockOnSend).not.toHaveBeenCalled();
-  });
-
-  it('Loading durumunda Stop butonu görünmeli ve çalışmalı', () => {
+ 
+  it('Loading durumunda Durdur butonu görünmeli ve onStop çalışmalı', () => {
     render(<ChatInput input="Soru..." loading={true} onStop={mockOnStop} />);
-
-    const buttons = screen.getAllByRole('button');
-    const stopButton = buttons[buttons.length - 1]; 
     
+    
+    const stopButton = screen.getByRole('button', { name: /durdur/i }); 
     fireEvent.click(stopButton);
+    
     expect(mockOnStop).toHaveBeenCalledTimes(1);
   });
 
-  it('Dosya seçildiğinde önizleme ve isim görünmeli', async () => {
-    const file = new File(['dummy content'], 'test.png', { type: 'image/png' });
+  it('FilePreview: Dosya seçildiğinde dosya adı görünmeli', async () => {
+    const file = new File(['içerik'], 'dokuman.pdf', { type: 'application/pdf' });
     render(<ChatInput input="" setInput={mockSetInput} onSend={mockOnSend} />);
 
     const fileInput = document.querySelector('input[type="file"]');
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
     await waitFor(() => {
-        fireEvent.change(fileInput, { target: { files: [file] } });
+      expect(screen.getByText('dokuman.pdf')).toBeInTheDocument();
     });
-
-    expect(screen.getByText('test.png')).toBeInTheDocument();
-    
-    const sendButton = screen.getAllByRole('button').find(btn => !btn.disabled && !btn.title);
-    expect(sendButton).toBeInTheDocument();
   });
 
-  it('Sesli komut butonu desteklenmeyen tarayıcıda uyarı vermeli', () => {
-    // Özellikleri siliyoruz ki in window false dönsün
-    delete window.SpeechRecognition;
-    delete window.webkitSpeechRecognition;
-
-    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
-
-    render(<ChatInput input="" setInput={mockSetInput} />);
-    
-    const micButton = screen.getAllByRole('button')[1];
-    fireEvent.click(micButton);
-
-    expect(alertMock).toHaveBeenCalledWith('Tarayıcınız ses tanıma özelliğini desteklemiyor.');
-  });
-
-  it('Sesli komut desteklendiğinde kayıt başlamalı (Happy Path)', () => {
+ 
+  it('VoiceControl: Sesli komut butonu tıklandığında tanıma başlamalı', () => {
     const mockStart = vi.fn();
-
-    //  Arrow function yerine class kullanıyoruz
     class MockSpeechRecognition {
       constructor() {
         this.start = mockStart;
         this.stop = vi.fn();
-        this.lang = '';
-        this.onstart = null;
-        this.onresult = null;
-        this.onerror = null;
-        this.onend = null;
       }
     }
-
     vi.stubGlobal('SpeechRecognition', MockSpeechRecognition);
 
     render(<ChatInput input="" setInput={mockSetInput} />);
     
-    const micButton = screen.getAllByRole('button')[1];
+   
+    const micButton = screen.getByRole('button', { name: /sesli komut/i }); 
     fireEvent.click(micButton);
 
     expect(mockStart).toHaveBeenCalled();

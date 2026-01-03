@@ -10,6 +10,7 @@ const MOCK_CHUNKS = [
 
 describe('aiService', () => {
   beforeEach(() => {
+
     // Her test öncesi fetch mockunu temizle
     vi.restoreAllMocks();
   });
@@ -31,6 +32,7 @@ describe('aiService', () => {
   };
 
   it('API başarılı yanıt verdiğinde stream verilerini doğru işlemeli', async () => {
+    
     // Fetchi başarılı bir stream dönecek şekilde mockla
     global.fetch = vi.fn().mockResolvedValue(mockStreamResponse(MOCK_CHUNKS));
 

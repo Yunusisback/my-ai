@@ -4,7 +4,7 @@ import Sidebar from '../components/Sidebar';
 
 describe('Sidebar Component', () => {
 
-  // Mock 
+  // Mock Fonksiyonlar
   const mockToggleSidebar = vi.fn();
   const mockOnNewChat = vi.fn();
   const mockOnSelectChat = vi.fn();
@@ -33,7 +33,9 @@ describe('Sidebar Component', () => {
       confirmDelete: "Emin misin?",
       rename: "Yeniden Adlandır",
       pin: "Sabitle",
-      unpin: "Sabitlemeyi Kaldır"
+      unpin: "Sabitlemeyi Kaldır",
+      yes: "Evet", 
+      no: "Hayır"
     },
     chats: mockChats,
     activeChatId: null,
@@ -61,15 +63,9 @@ describe('Sidebar Component', () => {
   it('Sohbetler doğru gruplanmalı (Sabitlenenler ve Tarih)', () => {
     render(<Sidebar {...defaultProps} />);
     
-    // Sabitlenenler başlığı altında sabitlenmiş sohbet olmalı
     const pinnedHeader = screen.getByText('Sabitlenenler');
     expect(pinnedHeader).toBeInTheDocument();
     expect(screen.getByText('Sabitlenmiş Sohbet')).toBeInTheDocument();
-
-    // Bugün veya tarih başlığı altında Normal Sohbet olmalı
-    // getRelativeDateLabel fonksiyonuna göre bugün veya today döner
-    // Test ortamında dil tr ise Bugün arayabiliriz
-    // Eğer bulamazsa esnek davranıp chatin kendisinin render edildiğine bakabiliriz
     expect(screen.getByText('Normal Sohbet')).toBeInTheDocument();
   });
 
@@ -81,39 +77,35 @@ describe('Sidebar Component', () => {
   it('Yeni Sohbet butonuna basıldığında onNewChat çalışmalı', () => {
     render(<Sidebar {...defaultProps} />);
     
-    // Yeni Sohbet butonunu bul (Metin ile)
     const newChatBtn = screen.getByRole('button', { name: /Yeni Sohbet/i });
     fireEvent.click(newChatBtn);
 
     expect(mockOnNewChat).toHaveBeenCalled();
   });
 
-  it('Sohbet silme akışı (Delete Flow) doğru çalışmalı', () => {
+  it('Sohbet silme akışı (Delete Flow) doğru çalışmalı', async () => {
     render(<Sidebar {...defaultProps} />);
 
-    // Normal Sohbeti bul ve içindeki menü butonunu (...) tetikle
+    // 1. Normal Sohbeti bul ve menü butonunu tetikle
     const chatItem = screen.getByText('Normal Sohbet').closest('.relative');
-    
-    // Chat item içindeki "..." butonunu bul 
     const menuButtons = within(chatItem).getAllByRole('button');
     const moreButton = menuButtons[1]; 
 
-    // 1 Menüyü Aç
     fireEvent.click(moreButton);
     
-    // 2 Sil seçeneğini bul ve tıkla
+    // 2. Sil seçeneğini tıkla
     const deleteOption = screen.getByText('Sil');
     fireEvent.click(deleteOption);
 
-    // 3 Onay ekranı geldi mi? 
+    // 3. Onay ekranını doğrula
     expect(screen.getByText('Emin misin?')).toBeInTheDocument();
 
-    // 4 Evet butonuna bas 
-    const confirmButton = screen.getByTitle('Evet');
+    // 4. Evet butonuna bas (Asenkron ve metin odaklı çözüm)
+    const confirmButton = await screen.findByText(/Evet/i); 
     fireEvent.click(confirmButton);
 
-    // 5 onDeleteChat fonksiyonu doğru ID ile çağrıldı mı?
-    expect(mockOnDeleteChat).toHaveBeenCalledWith('2'); // Normal Sohbet ID'si 2
+    // 5. onDeleteChat doğru ID ile çağrıldı mı?
+    expect(mockOnDeleteChat).toHaveBeenCalledWith('2');
   });
 
   it('Sabitleme (Pin) butonuna basıldığında onPinChat çalışmalı', () => {
@@ -124,7 +116,6 @@ describe('Sidebar Component', () => {
 
     fireEvent.click(moreButton);
 
-    // Normal sohbet pinli değil menüde "Sabitle" yazmalı
     const pinOption = screen.getByText('Sabitle');
     fireEvent.click(pinOption);
 
@@ -148,7 +139,6 @@ describe('Sidebar Component', () => {
   it('Kullanıcı Ayarları butonuna basıldığında onToggleSettings çalışmalı', () => {
     render(<Sidebar {...defaultProps} />);
 
-    // En alttaki kullanıcı butonu Kullanıcı adı Test User
     const userButton = screen.getByText('Test User').closest('button');
     fireEvent.click(userButton);
 
@@ -157,22 +147,16 @@ describe('Sidebar Component', () => {
 
   it('Mobil görünümde Sidebar kapalıysa ekrandan dışarıda olmalı (CSS check)', () => {
     const { container } = render(<Sidebar {...defaultProps} showSidebar={false} />);
-    
-    // <aside> elementini bul
     const aside = container.querySelector('aside');
-    
-    // translate-x-full sınıfı var mı?
     expect(aside.className).toContain('-translate-x-full');
   });
 
   it('Mobil görünümde Backdrop tıklanınca sidebar kapanmalı', () => {
-    // showSidebar = true
     render(<Sidebar {...defaultProps} showSidebar={true} />);
     
   
     const backdrop = document.querySelector('.bg-black\\/40');
     
-
     if (backdrop) {
       fireEvent.click(backdrop);
       expect(mockToggleSidebar).toHaveBeenCalled();

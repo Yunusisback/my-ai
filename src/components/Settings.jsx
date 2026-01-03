@@ -35,6 +35,7 @@ export default function Settings({
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+      
       {/* Arka Plan Karartma */}
       <div 
         className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity"

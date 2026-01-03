@@ -4,9 +4,10 @@ export default function RenameModal({ isOpen, onClose, onRename, initialValue, t
   const [value, setValue] = useState(initialValue || '');
   const inputRef = useRef(null);
 
-  //  Gereksiz renderı önlemek için kontrol ekledik
+ 
   useEffect(() => {
     if (isOpen) {
+
       // Sadece değer gerçekten farklıysa güncelle
       if (value !== initialValue) {
         setValue(initialValue);
@@ -34,6 +35,7 @@ export default function RenameModal({ isOpen, onClose, onRename, initialValue, t
 
   return (
     <div className="fixed inset-0 z-80 flex items-center justify-center p-4 animate-fadeIn">
+      
       {/* Arkaplan Karartma */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
