@@ -90,13 +90,12 @@ src/
 └── index.css                 # Tailwind CSS v4 core directives
 
 
----
+
 
 ## 🤝 Contributing
 
-<div align="center">
+
 
 Contributions, issues, and feature requests are welcome!
 
 
-</div>
